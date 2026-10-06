@@ -1,6 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTodo } from '../context/TodoContext';
-import { Settings, Moon, Sun, Palette, User, Volume2, VolumeX, Download, Upload, Trash2, Check } from 'lucide-react';
+import { AppLockSettings } from '../components/AppLockSettings';
+import { Settings, Moon, Sun, Palette, User, Volume2, VolumeX, Download, Upload, Trash2, Check, Power } from 'lucide-react';
 
 const ACCENT_COLORS = [
   { name: 'Ungu (Indigo)', value: '#8b5cf6' },
@@ -10,6 +11,8 @@ const ACCENT_COLORS = [
   { name: 'Oranye (Amber)', value: '#f59e0b' }
 ];
 
+const isElectron = !!(window.electronAPI && window.electronAPI.getLoginItemSettings);
+
 export const SettingsPage = () => {
   const { settings, updateSettings, resetAllData, exportData, importData, tasks, events, goals, routines } = useTodo();
   const fileInputRef = useRef(null);
@@ -17,6 +20,17 @@ export const SettingsPage = () => {
   // Local state for username input to avoid saving on every keystroke
   const [localUsername, setLocalUsername] = useState(settings.username || '');
   const [showConfirmReset, setShowConfirmReset] = useState(false);
+  const [autoStartup, setAutoStartup] = useState(false);
+  const [startupLoading, setStartupLoading] = useState(false);
+
+  // Fetch current login item settings from Electron on mount
+  useEffect(() => {
+    if (isElectron) {
+      window.electronAPI.getLoginItemSettings().then((result) => {
+        setAutoStartup(result.openAtLogin);
+      });
+    }
+  }, []);
 
   const handleUsernameBlur = () => {
     updateSettings({ username: localUsername });
@@ -198,7 +212,47 @@ export const SettingsPage = () => {
               </button>
             </div>
           </div>
+
+          {/* Auto-Startup */}
+          <div>
+            <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '10px', fontSize: '0.9rem' }}>Jalankan saat Startup</label>
+            <button
+              disabled={!isElectron || startupLoading}
+              onClick={async () => {
+                if (!isElectron) return;
+                setStartupLoading(true);
+                try {
+                  const result = await window.electronAPI.setLoginItemSettings(!autoStartup);
+                  setAutoStartup(result.openAtLogin);
+                } catch (e) {
+                  console.error('Failed to set login item:', e);
+                }
+                setStartupLoading(false);
+              }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '12px',
+                padding: '12px 20px', borderRadius: '10px', width: '100%',
+                background: !isElectron ? 'rgba(255,255,255,0.03)' : autoStartup ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                border: `1px solid ${!isElectron ? 'transparent' : autoStartup ? 'var(--accent-color)' : 'transparent'}`,
+                color: !isElectron ? 'var(--text-secondary)' : autoStartup ? 'var(--accent-color)' : 'var(--text-secondary)',
+                justifyContent: 'center',
+                opacity: !isElectron ? 0.5 : startupLoading ? 0.7 : 1,
+                cursor: !isElectron ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              <Power size={20} />
+              {startupLoading ? 'Mengubah...' : autoStartup ? 'Startup Aktif' : 'Startup Mati'}
+            </button>
+            {!isElectron && (
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '6px', opacity: 0.7 }}>
+                Hanya tersedia di versi desktop (Electron).
+              </p>
+            )}
+          </div>
         </div>
+
+        <AppLockSettings />
 
         {/* Data & Backup */}
         <div className="glass" style={{ padding: '24px' }}>

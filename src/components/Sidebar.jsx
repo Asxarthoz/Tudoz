@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, CheckSquare, CalendarDays, Target, Repeat, Settings } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, CalendarDays, Target, Repeat, Settings, FileText, Dumbbell } from 'lucide-react';
 
 export const Sidebar = () => {
   return (
@@ -29,6 +29,14 @@ export const Sidebar = () => {
         <NavLink to="/events" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
           <CalendarDays size={20} />
           <span>Event</span>
+        </NavLink>
+        <NavLink to="/notes" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
+          <FileText size={20} />
+          <span>Catatan</span>
+        </NavLink>
+        <NavLink to="/sports" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
+          <Dumbbell size={20} />
+          <span>Olahraga</span>
         </NavLink>
       </nav>
       <div style={{ marginTop: 'auto', padding: '0' }}>

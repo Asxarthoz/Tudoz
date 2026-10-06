@@ -11,7 +11,8 @@ const defaultSettings = {
   accentColor: '#8b5cf6',
   username: '',
   soundEnabled: true,
-  autoResetRoutines: true
+  autoResetRoutines: true,
+  appLock: null // { passwordHash, passwordSalt, question, answerHash, answerSalt } saat kunci aktif
 };
 
 export const TodoProvider = ({ children }) => {
@@ -47,10 +48,22 @@ export const TodoProvider = ({ children }) => {
     return parsed.map(r => r.lastReset !== today ? { ...r, done: false, lastReset: today } : r);
   });
 
+  const [notes, setNotes] = useState(() => {
+    const saved = localStorage.getItem('todo_notes');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [sports, setSports] = useState(() => {
+    const saved = localStorage.getItem('todo_sports');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   useEffect(() => { localStorage.setItem('todo_tasks', JSON.stringify(tasks)); }, [tasks]);
   useEffect(() => { localStorage.setItem('todo_events', JSON.stringify(events)); }, [events]);
   useEffect(() => { localStorage.setItem('todo_goals', JSON.stringify(goals)); }, [goals]);
   useEffect(() => { localStorage.setItem('todo_routines', JSON.stringify(routines)); }, [routines]);
+  useEffect(() => { localStorage.setItem('todo_notes', JSON.stringify(notes)); }, [notes]);
+  useEffect(() => { localStorage.setItem('todo_sports', JSON.stringify(sports)); }, [sports]);
   useEffect(() => { localStorage.setItem('todo_settings', JSON.stringify(settings)); }, [settings]);
 
   // Theme & Accent Color injection
@@ -77,6 +90,8 @@ export const TodoProvider = ({ children }) => {
     setEvents([]);
     setGoals([]);
     setRoutines([]);
+    setNotes([]);
+    setSports([]);
     // Settings can be kept or reset, let's just keep settings
   };
 
@@ -85,7 +100,10 @@ export const TodoProvider = ({ children }) => {
     if (data.events) setEvents(data.events);
     if (data.goals) setGoals(data.goals);
     if (data.routines) setRoutines(data.routines);
-    if (data.settings) setSettings({ ...defaultSettings, ...data.settings });
+    if (data.notes) setNotes(data.notes);
+    if (data.sports) setSports(data.sports);
+    // Kunci aplikasi tidak ikut dipulihkan dari backup agar import tidak bisa mematikan/mengganti password
+    if (data.settings) setSettings(prev => ({ ...defaultSettings, ...data.settings, appLock: prev.appLock }));
   };
 
   const playDoneSound = () => {
@@ -145,12 +163,33 @@ export const TodoProvider = ({ children }) => {
     r.id === id ? { ...r, done: !r.done, lastReset: getTodayStr() } : r
   ));
 
+  // Notes
+  const addNote = (note) => setNotes(prev => [
+    {
+      ...note,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString()
+    },
+    ...prev
+  ]);
+  const updateNote = (id, updated) => setNotes(prev => prev.map(n =>
+    n.id === id ? { ...n, ...updated, updatedAt: new Date().toISOString() } : n
+  ));
+  const removeNote = (id) => setNotes(prev => prev.filter(n => n.id !== id));
+
+  // Sports
+  const addSport = (sport) => setSports(prev => [...prev, { ...sport, id: Date.now().toString() }]);
+  const updateSport = (id, updated) => setSports(prev => prev.map(s => s.id === id ? { ...s, ...updated } : s));
+  const removeSport = (id) => setSports(prev => prev.filter(s => s.id !== id));
+
   return (
     <TodoContext.Provider value={{
       tasks, addTask, updateTask, removeTask, toggleTask,
       events, addEvent, updateEvent, removeEvent, toggleEvent,
       goals, addGoal, updateGoal, removeGoal,
       routines, addRoutine, updateRoutine, removeRoutine, toggleRoutine,
+      notes, addNote, updateNote, removeNote,
+      sports, addSport, updateSport, removeSport,
       settings, updateSettings, resetAllData, importData, playDoneSound
     }}>
       {children}

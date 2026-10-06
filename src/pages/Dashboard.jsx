@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTodo } from '../context/TodoContext';
-import { Target, CalendarDays, CheckSquare, Clock, AlertCircle, Repeat, Check } from 'lucide-react';
+import { Target, CalendarDays, CheckSquare, Clock, AlertCircle, Repeat, Check, Dumbbell } from 'lucide-react';
 
 const MOTIVATIONAL_QUOTES = [
   { text: "Semuanya selalu terlihat mustahil sampai akhirnya berhasil dilakukan.", author: "Nelson Mandela" },
@@ -43,7 +43,7 @@ const getEventCountdown = (dateStr) => {
 };
 
 export const Dashboard = () => {
-  const { tasks, events, goals, routines, removeTask, toggleRoutine, settings, playDoneSound } = useTodo();
+  const { tasks, events, goals, routines, sports, removeTask, toggleRoutine, settings, playDoneSound } = useTodo();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [randomQuote] = useState(() => {
     return MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)];
@@ -60,6 +60,11 @@ export const Dashboard = () => {
   const upcomingEvents = events.filter(e => !e.completed);
   const doneRoutines = routines.filter(r => r.done).length;
   const routineProgress = routines.length > 0 ? Math.round((doneRoutines / routines.length) * 100) : 0;
+
+  // Sports for today
+  const dayMap = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  const todayDayName = dayMap[currentTime.getDay()];
+  const todaySports = (sports || []).filter(s => s.day === todayDayName).sort((a, b) => a.time.localeCompare(b.time));
 
   return (
     <div className="animate-fade-in">
@@ -197,6 +202,34 @@ export const Dashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Jadwal Olahraga Hari Ini */}
+      {todaySports.length > 0 && (
+        <div className="glass" style={{ padding: '20px', marginTop: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <Dumbbell size={18} color="#06b6d4" />
+            <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>Olahraga Hari Ini</h3>
+            <span style={{ marginLeft: 'auto', fontSize: '0.85rem', background: 'rgba(6, 182, 212, 0.15)', color: '#06b6d4', padding: '2px 10px', borderRadius: '999px' }}>{todaySports.length}</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {todaySports.map(sport => (
+              <div key={sport.id} style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', borderLeft: '3px solid #06b6d4', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(6, 182, 212, 0.1)', flexShrink: 0 }}>
+                  <Dumbbell size={18} style={{ color: '#06b6d4' }} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontWeight: '600', fontSize: '0.95rem', marginBottom: sport.description ? '4px' : 0 }}>{sport.title}</p>
+                  {sport.description && <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sport.description}</p>}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', color: '#06b6d4', fontWeight: '600', background: 'rgba(6, 182, 212, 0.1)', padding: '4px 10px', borderRadius: '8px', flexShrink: 0 }}>
+                  <Clock size={14} />
+                  {sport.time}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Rutinitas Harian Summary */}
       {routines.length > 0 && (
